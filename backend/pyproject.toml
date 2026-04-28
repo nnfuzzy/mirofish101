@@ -15,7 +15,11 @@ dependencies = [
     
     # LLM 相关
     "openai>=1.0.0",
-    
+    # LiteLLM provides a unified interface across 100+ providers
+    # (Gemini, Anthropic, DeepSeek, Mistral, Groq, OpenAI, Ollama, …).
+    # Configure via LITELLM_MODEL / LITELLM_REPORT_MODEL env vars.
+    "litellm>=1.50.0",
+
     # Zep Cloud
     "zep-cloud==3.13.0",
     

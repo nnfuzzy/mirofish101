@@ -19,7 +19,7 @@ from datetime import datetime
 from enum import Enum
 
 from ..config import Config
-from ..utils.llm_client import LLMClient
+from ..utils.llm_client import LLMClient, ReportLLMClient
 from ..utils.logger import get_logger
 from ..utils.locale import get_language_instruction, t
 from .zep_tools import (
@@ -903,7 +903,9 @@ class ReportAgent:
         self.simulation_id = simulation_id
         self.simulation_requirement = simulation_requirement
         
-        self.llm = llm_client or LLMClient()
+        # ReportLLMClient prefers LITELLM_REPORT_MODEL (e.g.
+        # gemini/gemini-2.5-pro) over the lighter agent-loop model.
+        self.llm = llm_client or ReportLLMClient()
         self.zep_tools = zep_tools or ZepToolsService()
         
         # 工具定义
