@@ -227,15 +227,54 @@ class SimulationRunner:
     # 图谱记忆更新配置
     _graph_memory_enabled: Dict[str, bool] = {}  # simulation_id -> enabled
     
+    # Statuses that imply a live worker process should exist.
+    _ACTIVE_STATUSES = (
+        RunnerStatus.STARTING,
+        RunnerStatus.RUNNING,
+        RunnerStatus.PAUSED,
+        RunnerStatus.STOPPING,
+    )
+
+    @classmethod
+    def _is_pid_alive(cls, pid: Optional[int]) -> bool:
+        """Best-effort check that *pid* refers to a live process in this pod."""
+        if not pid or pid <= 0:
+            return False
+        try:
+            os.kill(pid, 0)
+        except (ProcessLookupError, PermissionError, OSError):
+            return False
+        return True
+
     @classmethod
     def get_run_state(cls, simulation_id: str) -> Optional[SimulationRunState]:
         """获取运行状态"""
         if simulation_id in cls._run_states:
             return cls._run_states[simulation_id]
-        
+
         # 尝试从文件加载
         state = cls._load_run_state(simulation_id)
         if state:
+            # Self-heal stale "running" state left over from a pod/container
+            # restart: the on-disk JSON still claims the worker is active, but
+            # the pid recorded there no longer exists in this pod, so /start
+            # would otherwise reject every retry with "已在运行中".
+            if (
+                state.runner_status in cls._ACTIVE_STATUSES
+                and not cls._is_pid_alive(state.process_pid)
+            ):
+                logger.warning(
+                    "Detected orphaned run_state for %s (status=%s, pid=%s); "
+                    "marking as failed so /start is accepted again.",
+                    simulation_id, state.runner_status.value, state.process_pid,
+                )
+                state.runner_status = RunnerStatus.FAILED
+                state.error = (
+                    state.error
+                    or "Worker process gone (pod restart?). State self-healed."
+                )
+                state.completed_at = state.completed_at or datetime.now().isoformat()
+                cls._save_run_state(state)
             cls._run_states[simulation_id] = state
         return state
     
