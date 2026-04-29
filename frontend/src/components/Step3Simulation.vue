@@ -687,11 +687,32 @@ watch(() => props.systemLogs?.length, () => {
   })
 })
 
-onMounted(() => {
+onMounted(async () => {
   addLog(t('log.step3Init'))
-  if (props.simulationId) {
-    doStartSimulation()
+  if (!props.simulationId) return
+
+  // If a worker is already running for this simulation, attach to it
+  // instead of restarting. doStartSimulation sends force=true, which kills
+  // the live worker — that destroyed in-flight progress whenever a user
+  // hard-reloaded the run view.
+  try {
+    const stateRes = await getRunStatus(props.simulationId)
+    const status = stateRes?.data?.runner_status
+    if (status === 'running' || status === 'paused' || status === 'starting') {
+      addLog(t('log.engineStarted'))
+      addLog(`  ├─ PID: ${stateRes.data.process_pid || '-'} (attached)`)
+      runStatus.value = stateRes.data
+      phase.value = 1
+      startStatusPolling()
+      startDetailPolling()
+      return
+    }
+  } catch (err) {
+    // run-status fetch failed — fall through to a normal start.
+    console.warn('Could not check run-status before auto-start:', err?.message || err)
   }
+
+  doStartSimulation()
 })
 
 onUnmounted(() => {
