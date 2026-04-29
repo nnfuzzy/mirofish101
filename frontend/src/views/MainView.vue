@@ -194,8 +194,11 @@ const initProject = async () => {
 const handleNewProject = async () => {
   const pending = getPendingUpload()
   if (!pending.isPending || pending.files.length === 0) {
-    error.value = 'No pending files found.'
-    addLog('Error: No pending files found for new project.')
+    // File objects can't survive a hard reload (sessionStorage can't store
+    // binary contents). Send the user back to Home so they can re-pick files;
+    // their typed requirement is preserved by the pendingUpload store.
+    addLog('No pending files (likely a page reload). Redirecting to Home.')
+    router.replace({ name: 'Home' })
     return
   }
   

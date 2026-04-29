@@ -69,7 +69,10 @@
     "promptPlaceholder": "// Describe your simulation or prediction requirement in natural language",
     "engineBadge": "Engine: MiroFish-V1.0",
     "startEngine": "Start Engine",
-    "initializing": "Initializing..."
+    "initializing": "Initializing...",
+    "resumeBanner": "Active simulation: {name} (round {round}/{total})",
+    "resumeBtn": "Resume",
+    "resumeDismiss": "Dismiss"
   },
   "main": {
     "layoutGraph": "Graph",

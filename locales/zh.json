@@ -69,7 +69,10 @@
     "promptPlaceholder": "// 用自然语言输入模拟或预测需求（例.武大若发布撤销肖某处分的公告，会引发什么舆情走向）",
     "engineBadge": "引擎: MiroFish-V1.0",
     "startEngine": "启动引擎",
-    "initializing": "初始化中..."
+    "initializing": "初始化中...",
+    "resumeBanner": "正在运行的模拟：{name}（第 {round}/{total} 轮）",
+    "resumeBtn": "继续",
+    "resumeDismiss": "关闭"
   },
   "main": {
     "layoutGraph": "图谱",

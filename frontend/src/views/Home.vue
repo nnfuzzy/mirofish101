@@ -12,6 +12,26 @@
     </nav>
 
     <div class="main-content">
+      <!-- 活跃模拟恢复横幅（页面刷新后用） -->
+      <div v-if="activeSimulation" class="resume-banner">
+        <div class="resume-banner-content">
+          <span class="resume-dot"></span>
+          <span class="resume-text">
+            {{ $t('home.resumeBanner', {
+                name: activeSimulation.project_name || activeSimulation.simulation_id,
+                round: activeSimulation.current_round,
+                total: activeSimulation.total_rounds || '?'
+            }) }}
+          </span>
+        </div>
+        <div class="resume-banner-actions">
+          <button class="resume-btn" @click="resumeActiveSimulation">
+            {{ $t('home.resumeBtn') }} <span class="btn-arrow">→</span>
+          </button>
+          <button class="resume-dismiss" @click="dismissResume" :title="$t('home.resumeDismiss')">×</button>
+        </div>
+      </div>
+
       <!-- 上半部分：Hero 区域 -->
       <section class="hero-section">
         <div class="hero-left">
@@ -212,17 +232,26 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import HistoryDatabase from '../components/HistoryDatabase.vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue'
+import { getPendingUpload, setPendingUpload } from '../store/pendingUpload'
+import { getSimulationHistory } from '../api/simulation'
 
 const router = useRouter()
 
-// 表单数据
+// 表单数据 — restore the prompt text from sessionStorage so a hard reload
+// doesn't lose what the user already typed.
 const formData = ref({
-  simulationRequirement: ''
+  simulationRequirement: getPendingUpload().simulationRequirement || ''
 })
+
+// Mirror the textarea back into the persisted store on every keystroke.
+watch(
+  () => formData.value.simulationRequirement,
+  (val) => setPendingUpload(files.value, val)
+)
 
 // 文件列表
 const files = ref([])
@@ -231,6 +260,45 @@ const files = ref([])
 const loading = ref(false)
 const error = ref('')
 const isDragOver = ref(false)
+
+// "Resume your running simulation" banner: shown when the backend has a
+// simulation in starting/running/paused state. Lets users get back to it
+// after a hard reload (which loses all in-memory client state).
+const ACTIVE_STATUSES = new Set(['starting', 'running', 'paused'])
+const activeSimulation = ref(null)
+const RESUME_DISMISS_KEY = 'mirofish.resumeBanner.dismissedSimId'
+
+const fetchActiveSimulation = async () => {
+  try {
+    const res = await getSimulationHistory(10)
+    if (!res?.success) return
+    const dismissedId = sessionStorage.getItem(RESUME_DISMISS_KEY)
+    const active = (res.data || []).find(
+      (s) => ACTIVE_STATUSES.has(s.runner_status) && s.simulation_id !== dismissedId
+    )
+    if (active) activeSimulation.value = active
+  } catch (err) {
+    // Best-effort — banner is a UX nicety, never block Home render.
+    console.warn('Could not check for active simulations:', err?.message || err)
+  }
+}
+
+const resumeActiveSimulation = () => {
+  if (!activeSimulation.value) return
+  router.push({
+    name: 'SimulationRun',
+    params: { simulationId: activeSimulation.value.simulation_id }
+  })
+}
+
+const dismissResume = () => {
+  if (activeSimulation.value) {
+    sessionStorage.setItem(RESUME_DISMISS_KEY, activeSimulation.value.simulation_id)
+  }
+  activeSimulation.value = null
+}
+
+onMounted(fetchActiveSimulation)
 
 // 文件输入引用
 const fileInput = ref(null)
@@ -893,6 +961,82 @@ const startSimulation = () => {
     max-width: 200px;
     margin-bottom: 20px;
   }
+}
+
+/* Resume-active-simulation banner */
+.resume-banner {
+  margin: 16px 24px 0;
+  padding: 12px 18px;
+  border: 1px solid #FF4500;
+  background: rgba(255, 69, 0, 0.06);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: 'Space Grotesk', 'Noto Sans SC', system-ui, sans-serif;
+  flex-wrap: wrap;
+}
+.resume-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.resume-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FF4500;
+  box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7);
+  animation: resume-pulse 1.6s infinite;
+  flex-shrink: 0;
+}
+@keyframes resume-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(255, 69, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); }
+}
+.resume-text {
+  color: #1a1a1a;
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.resume-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.resume-btn {
+  background: #FF4500;
+  color: #FFF;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.resume-btn:hover {
+  background: #e63e00;
+}
+.resume-dismiss {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: #555;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+.resume-dismiss:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 </style>
 
