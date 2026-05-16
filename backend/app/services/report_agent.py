@@ -880,7 +880,24 @@ class ReportAgent:
     
     # 对话中的最大工具调用次数
     MAX_TOOL_CALLS_PER_CHAT = 2
-    
+
+    @staticmethod
+    def _read_selected_model(simulation_id: str) -> "str | None":
+        """Read selected_model from this simulation's config, or None."""
+        import json
+        import os
+        from .simulation_manager import SimulationManager
+        sim_dir = os.path.join(SimulationManager.SIMULATION_DATA_DIR, simulation_id)
+        config_path = os.path.join(sim_dir, "simulation_config.json")
+        if not os.path.exists(config_path):
+            return None
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            return cfg.get("selected_model") or None
+        except Exception:
+            return None
+
     def __init__(
         self, 
         graph_id: str,
@@ -903,9 +920,14 @@ class ReportAgent:
         self.simulation_id = simulation_id
         self.simulation_requirement = simulation_requirement
         
-        # ReportLLMClient prefers LITELLM_REPORT_MODEL (e.g.
-        # gemini/gemini-2.5-pro) over the lighter agent-loop model.
-        self.llm = llm_client or ReportLLMClient()
+        # Per-simulation model override: read selected_model from
+        # simulation_config.json. Falls back to env (LITELLM_REPORT_MODEL
+        # → LITELLM_MODEL) when absent.
+        if llm_client:
+            self.llm = llm_client
+        else:
+            selected_model = self._read_selected_model(simulation_id)
+            self.llm = ReportLLMClient(model=selected_model) if selected_model else ReportLLMClient()
         self.zep_tools = zep_tools or ZepToolsService()
         
         # 工具定义
