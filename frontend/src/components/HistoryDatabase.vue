@@ -196,22 +196,25 @@
   </div>
 
   <!-- 删除确认弹窗 -->
-  <div v-if="deleteTarget" class="confirm-backdrop" @click.self="deleteTarget = null">
-    <div class="confirm-modal">
-      <h3>{{ $t('history.deleteConfirmTitle', { id: deleteTarget.simulation_id }) }}</h3>
-      <p v-if="deleteConflict">{{ $t('history.deleteConflictRunning') }}</p>
-      <p v-else>{{ $t('history.deleteConfirmBody') }}</p>
-      <div class="confirm-actions">
-        <button type="button" @click="deleteTarget = null">{{ $t('common.cancel') }}</button>
-        <button
-          type="button"
-          class="confirm-delete-btn"
-          :disabled="deleteConflict || deleting"
-          @click="confirmDelete"
-        >{{ deleting ? $t('common.loading') : $t('history.deleteConfirmButton') }}</button>
+  <Teleport to="body">
+    <div v-if="deleteTarget" class="confirm-backdrop" @click.self="deleteTarget = null">
+      <div class="confirm-modal">
+        <h3>{{ $t('history.deleteConfirmTitle', { id: deleteTarget.simulation_id }) }}</h3>
+        <p v-if="deleteError" class="confirm-error">{{ deleteError }}</p>
+        <p v-else-if="deleteConflict">{{ $t('history.deleteConflictRunning') }}</p>
+        <p v-else>{{ $t('history.deleteConfirmBody') }}</p>
+        <div class="confirm-actions">
+          <button type="button" @click="deleteTarget = null">{{ $t('common.cancel') }}</button>
+          <button
+            type="button"
+            class="confirm-delete-btn"
+            :disabled="deleteConflict || deleting || !!deleteError"
+            @click="confirmDelete"
+          >{{ deleting ? $t('common.loading') : $t('history.deleteConfirmButton') }}</button>
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -236,6 +239,7 @@ const selectedProject = ref(null)  // 当前选中的项目（用于弹窗）
 const deleteTarget = ref(null)
 const deleteConflict = ref(false)
 const deleting = ref(false)
+const deleteError = ref('')
 
 let observer = null
 let isAnimating = false  // 动画锁，防止闪烁
@@ -470,25 +474,28 @@ const goToReport = () => {
 function askDelete(sim) {
   deleteTarget.value = sim
   deleteConflict.value = false
+  deleteError.value = ''
 }
 
 // 确认删除
 async function confirmDelete() {
-  if (!deleteTarget.value) return
+  const target = deleteTarget.value
+  if (!target) return
   deleting.value = true
   try {
-    const result = await deleteSimulation(deleteTarget.value.simulation_id)
+    const result = await deleteSimulation(target.simulation_id)
     if (result.success) {
       // 从本地列表中移除
       projects.value = projects.value.filter(
-        s => s.simulation_id !== deleteTarget.value.simulation_id
+        s => s.simulation_id !== target.simulation_id
       )
       deleteTarget.value = null
     } else if (result.data && result.data.runner_status) {
       // 409 冲突 — 模拟仍在运行
       deleteConflict.value = true
     } else {
-      console.error('删除失败:', result.error)
+      // Surface the error inline rather than swallowing to console.
+      deleteError.value = result.error || result.message || 'Unknown error'
     }
   } finally {
     deleting.value = false
@@ -1431,4 +1438,5 @@ onUnmounted(() => {
 }
 .confirm-actions .confirm-delete-btn { background: #d32f2f; color: #fff; border-color: #d32f2f; }
 .confirm-actions .confirm-delete-btn:disabled { background: #f0a0a0; border-color: #f0a0a0; cursor: not-allowed; }
+.confirm-error { color: #d32f2f; }
 </style>
