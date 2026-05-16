@@ -185,3 +185,11 @@ export const getSimulationHistory = (limit = 20) => {
   return service.get('/api/simulation/history', { params: { limit } })
 }
 
+/**
+ * Hard-delete a simulation.
+ * @param {string} simulationId
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>}
+ */
+export const deleteSimulation = (simulationId) => {
+  return service.delete(`/api/simulation/${simulationId}`, { validateStatus: () => true })
+}
