@@ -432,7 +432,24 @@ class SimulationRunner:
             env = os.environ.copy()
             env['PYTHONUTF8'] = '1'  # Python 3.7+ 支持，让所有 open() 默认使用 UTF-8
             env['PYTHONIOENCODING'] = 'utf-8'  # 确保 stdout/stderr 使用 UTF-8
-            
+
+            # Per-simulation LLM model override (set via /simulation/start payload).
+            # Loaded from simulation_config.json so subprocess scripts pick it up
+            # through Config.LITELLM_MODEL. Falls back to the global env when unset.
+            try:
+                if os.path.exists(config_path):
+                    with open(config_path, 'r', encoding='utf-8') as _f:
+                        _cfg = json.load(_f)
+                    selected_model = _cfg.get("selected_model")
+                    if selected_model:
+                        env['LITELLM_MODEL'] = selected_model
+                        env['LITELLM_REPORT_MODEL'] = selected_model
+                        logger.info(
+                            f"[{simulation_id}] 使用用户选择的模型: {selected_model}"
+                        )
+            except Exception as _e:
+                logger.warning(f"[{simulation_id}] 读取 selected_model 失败，使用环境默认: {_e}")
+
             # 设置工作目录为模拟目录（数据库等文件会生成在此）
             # 使用 start_new_session=True 创建新的进程组，确保可以通过 os.killpg 终止所有子进程
             process = subprocess.Popen(
