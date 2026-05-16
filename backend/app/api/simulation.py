@@ -43,6 +43,21 @@ def optimize_interview_prompt(prompt: str) -> str:
     return f"{INTERVIEW_PROMPT_PREFIX}{prompt}"
 
 
+# ============== 模型配置接口 ==============
+
+@simulation_bp.route('/models', methods=['GET'])
+def list_models():
+    """Return the allow-list of LLM models that can be picked per simulation."""
+    from ..constants.models import SUPPORTED_MODELS, DEFAULT_MODEL_ID
+    return jsonify({
+        "success": True,
+        "data": {
+            "models": SUPPORTED_MODELS,
+            "default_model_id": DEFAULT_MODEL_ID,
+        },
+    })
+
+
 # ============== 实体读取接口 ==============
 
 @simulation_bp.route('/entities/<graph_id>', methods=['GET'])
