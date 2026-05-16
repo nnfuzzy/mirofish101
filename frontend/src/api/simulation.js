@@ -190,6 +190,15 @@ export const getSimulationHistory = (limit = 20) => {
  * @param {string} simulationId
  * @returns {Promise<{success: boolean, data?: object, error?: string}>}
  */
-export const deleteSimulation = (simulationId) => {
-  return service.delete(`/api/simulation/${simulationId}`, { validateStatus: () => true })
+export const deleteSimulation = async (simulationId) => {
+  try {
+    // Interceptor unwraps response.data and resolves with it on success: true
+    return await service.delete(`/api/simulation/${simulationId}`, { validateStatus: () => true })
+  } catch (err) {
+    // Interceptor rejects with new Error(res.error) on success: false.
+    // Re-wrap into the standard body envelope so the caller can inspect .success / .data.
+    if (err && typeof err === 'object' && 'success' in err) return err
+    if (err && err.response && err.response.data) return err.response.data
+    return { success: false, error: String(err && err.message ? err.message : err) }
+  }
 }
