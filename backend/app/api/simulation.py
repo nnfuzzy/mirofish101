@@ -1337,13 +1337,14 @@ def delete_simulation(simulation_id: str):
     try:
         manager = SimulationManager()
         run_state = SimulationRunner.get_run_state(simulation_id)
-        if run_state and run_state.runner_status.value == "running":
+        UNSAFE_STATUSES = {"starting", "running", "paused", "stopping"}
+        if run_state and run_state.runner_status.value in UNSAFE_STATUSES:
             return jsonify({
                 "success": False,
                 "error": t('api.simulationRunningCannotDelete', id=simulation_id),
                 "data": {
                     "simulation_id": simulation_id,
-                    "runner_status": "running",
+                    "runner_status": run_state.runner_status.value,
                 }
             }), 409
 

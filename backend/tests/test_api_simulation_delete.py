@@ -1,5 +1,6 @@
 import os
 import json
+import pytest
 
 
 def _seed_sim(tmp_path, sim_id, runner_status=None):
@@ -31,11 +32,12 @@ def test_delete_returns_404_when_missing(flask_client):
     assert "not_found" in body["error"] or "未找到" in body["error"]
 
 
-def test_delete_returns_409_when_running(flask_client, tmp_path):
-    sim_dir = _seed_sim(tmp_path, "sim_running", runner_status="running")
-    resp = flask_client.delete("/api/simulation/sim_running")
-    assert resp.status_code == 409
+@pytest.mark.parametrize("status", ["starting", "running", "paused", "stopping"])
+def test_delete_returns_409_when_in_flight(flask_client, tmp_path, status):
+    sim_dir = _seed_sim(tmp_path, f"sim_{status}", runner_status=status)
+    resp = flask_client.delete(f"/api/simulation/sim_{status}")
+    assert resp.status_code == 409, f"Expected 409 for status={status}, got {resp.status_code}"
     body = resp.get_json()
     assert body["success"] is False
-    assert body["data"]["runner_status"] == "running"
+    assert body["data"]["runner_status"] == status
     assert os.path.exists(sim_dir)  # dir untouched
