@@ -336,7 +336,10 @@ class SimulationManager:
                 )
             
             # 传入graph_id以启用Zep检索功能，获取更丰富的上下文
-            generator = OasisProfileGenerator(graph_id=state.graph_id)
+            generator = OasisProfileGenerator(
+                graph_id=state.graph_id,
+                model_name=self._read_selected_model(simulation_id),
+            )
             
             def profile_progress(current, total, msg):
                 if progress_callback:
@@ -413,7 +416,9 @@ class SimulationManager:
                     total=3
                 )
             
-            config_generator = SimulationConfigGenerator()
+            config_generator = SimulationConfigGenerator(
+                model_name=self._read_selected_model(simulation_id),
+            )
             
             if progress_callback:
                 progress_callback(
@@ -527,6 +532,24 @@ class SimulationManager:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
+    def _read_selected_model(self, simulation_id: str) -> "str | None":
+        """Read selected_model from this simulation's config, or None.
+
+        Returns None if the config file is missing or doesn't have the field.
+        Used by regenerate flows to ensure profile/config regeneration uses the
+        user's picked model (in-flight runs already inject via subprocess env).
+        """
+        sim_dir = self._get_simulation_dir(simulation_id)
+        config_path = os.path.join(sim_dir, "simulation_config.json")
+        if not os.path.exists(config_path):
+            return None
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            return cfg.get("selected_model") or None
+        except Exception:
+            return None
+
     def get_run_instructions(self, simulation_id: str) -> Dict[str, str]:
         """获取运行说明"""
         sim_dir = self._get_simulation_dir(simulation_id)
