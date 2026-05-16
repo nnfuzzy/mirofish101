@@ -396,7 +396,8 @@
     "initReportAgent": "Initializing Report Agent...",
     "simulationRunningCannotDelete": "Simulation {id} is still running. Stop it first.",
     "simulationNotFound": "Simulation not found: {id}",
-    "simulationDeleted": "Deleted simulation {id}"
+    "simulationDeleted": "Deleted simulation {id}",
+    "invalidSelectedModel": "Unsupported model: {model}"
   },
   "progress": {
     "initGraphService": "Initializing graph build service...",

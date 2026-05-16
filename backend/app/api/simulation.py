@@ -1570,6 +1570,16 @@ def start_simulation():
         enable_graph_memory_update = data.get('enable_graph_memory_update', False)  # 可选：是否启用图谱记忆更新
         force = data.get('force', False)  # 可选：强制重新开始
 
+        # Optional: per-simulation model override (Gemini 3.x picker).
+        selected_model = data.get('selected_model')
+        if selected_model is not None:
+            from ..constants.models import SUPPORTED_MODEL_IDS
+            if selected_model not in SUPPORTED_MODEL_IDS:
+                return jsonify({
+                    "success": False,
+                    "error": t('api.invalidSelectedModel', model=selected_model)
+                }), 400
+
         # 验证 max_rounds 参数
         if max_rounds is not None:
             try:
@@ -1666,6 +1676,19 @@ def start_simulation():
             
             logger.info(f"启用图谱记忆更新: simulation_id={simulation_id}, graph_id={graph_id}")
         
+        # Persist the model pick into simulation_config.json so the runner
+        # (subprocess) and the ReportAgent (in-process) can both read it.
+        if selected_model is not None:
+            import json
+            sim_dir = manager._get_simulation_dir(simulation_id)
+            config_path = os.path.join(sim_dir, "simulation_config.json")
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                cfg["selected_model"] = selected_model
+                with open(config_path, 'w', encoding='utf-8') as f:
+                    json.dump(cfg, f, ensure_ascii=False, indent=2)
+
         # 启动模拟
         run_state = SimulationRunner.start_simulation(
             simulation_id=simulation_id,

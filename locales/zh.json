@@ -396,7 +396,8 @@
     "initReportAgent": "初始化Report Agent...",
     "simulationRunningCannotDelete": "模拟 {id} 正在运行，无法删除。请先停止。",
     "simulationNotFound": "未找到模拟：{id}",
-    "simulationDeleted": "已删除模拟 {id}"
+    "simulationDeleted": "已删除模拟 {id}",
+    "invalidSelectedModel": "不支持的模型：{model}"
   },
   "progress": {
     "initGraphService": "初始化图谱构建服务...",
