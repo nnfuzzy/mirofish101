@@ -78,6 +78,18 @@ export const listSimulations = (projectId) => {
 }
 
 /**
+ * Fetch the allow-list of LLM models for the per-simulation picker.
+ * @returns {Promise<{models: Array, default_model_id: string}>}
+ */
+export const listModels = async () => {
+  const resp = await service.get('/api/simulation/models')
+  // The shared interceptor in api/index.js returns response.data directly (the HTTP response body).
+  // For success responses, that is {success: true, data: {models: [...], default_model_id: "..."}}.
+  // We return just the inner data object.
+  return resp.data
+}
+
+/**
  * 启动模拟
  * @param {Object} data - { simulation_id, platform?, max_rounds?, enable_graph_memory_update? }
  */
