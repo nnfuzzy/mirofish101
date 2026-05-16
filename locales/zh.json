@@ -174,7 +174,8 @@
     "genderOther": "其他",
     "yearsOld": "岁",
     "initializing": "初始化",
-    "generating": "生成中"
+    "generating": "生成中",
+    "modelPickerTitle": "选择模型"
   },
   "step3": {
     "startGenerateReport": "开始生成结果报告",
@@ -572,7 +573,8 @@
     "getReportInfoFailed": "获取报告信息失败: {error}",
     "enterStep": "进入 Step {step}: {name}",
     "returnToStep": "返回 Step {step}: {name}",
-    "customSimRounds": "自定义模拟轮数: {rounds} 轮"
+    "customSimRounds": "自定义模拟轮数: {rounds} 轮",
+    "setSelectedModel": "已选择模型：{model}"
   },
   "report": {
     "taskStarted": "报告生成任务开始",

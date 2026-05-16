@@ -159,18 +159,29 @@ const handleNextStep = (params = {}) => {
   } else {
     addLog(t('log.useAutoRounds'))
   }
-  
+
+  // 记录选定模型
+  if (params.selectedModel) {
+    addLog(t('log.setSelectedModel', { model: params.selectedModel }))
+  }
+
   // 构建路由参数
   const routeParams = {
     name: 'SimulationRun',
-    params: { simulationId: currentSimulationId.value }
+    params: { simulationId: currentSimulationId.value },
+    query: {}
   }
-  
+
   // 如果有自定义轮数，通过 query 参数传递
   if (params.maxRounds) {
-    routeParams.query = { maxRounds: params.maxRounds }
+    routeParams.query.maxRounds = params.maxRounds
   }
-  
+
+  // 如果有选定模型，通过 query 参数传递
+  if (params.selectedModel) {
+    routeParams.query.selectedModel = params.selectedModel
+  }
+
   // 跳转到 Step 3 页面
   router.push(routeParams)
 }

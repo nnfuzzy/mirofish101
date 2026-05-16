@@ -170,6 +170,9 @@ const handleNextStep = (params = {}) => {
     if (currentStep.value === 3 && params.maxRounds) {
       addLog(t('log.customSimRounds', { rounds: params.maxRounds }))
     }
+    if (currentStep.value === 3 && params.selectedModel) {
+      addLog(t('log.setSelectedModel', { model: params.selectedModel }))
+    }
   }
 }
 

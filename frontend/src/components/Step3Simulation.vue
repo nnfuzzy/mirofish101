@@ -302,6 +302,7 @@ const { t } = useI18n()
 const props = defineProps({
   simulationId: String,
   maxRounds: Number, // 从Step2传入的最大轮数
+  selectedModel: { type: String, default: null }, // 从Step2传入的选定模型
   minutesPerRound: {
     type: Number,
     default: 30 // 默认每轮30分钟
@@ -406,7 +407,12 @@ const doStartSimulation = async () => {
       params.max_rounds = props.maxRounds
       addLog(t('log.setMaxRounds', { rounds: props.maxRounds }))
     }
-    
+
+    if (props.selectedModel) {
+      params.selected_model = props.selectedModel
+      addLog(t('log.setSelectedModel', { model: props.selectedModel }))
+    }
+
     addLog(t('log.graphMemoryUpdateEnabled'))
     
     const res = await startSimulation(params)

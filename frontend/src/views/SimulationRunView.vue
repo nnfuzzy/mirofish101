@@ -54,6 +54,7 @@
         <Step3Simulation
           :simulationId="currentSimulationId"
           :maxRounds="maxRounds"
+          :selectedModel="selectedModel"
           :minutesPerRound="minutesPerRound"
           :projectData="projectData"
           :graphData="graphData"
@@ -94,6 +95,7 @@ const viewMode = ref('split')
 const currentSimulationId = ref(route.params.simulationId)
 // 直接在初始化时从 query 参数获取 maxRounds，确保子组件能立即获取到值
 const maxRounds = ref(route.query.maxRounds ? parseInt(route.query.maxRounds) : null)
+const selectedModel = ref(route.query.selectedModel || null)
 const minutesPerRound = ref(30) // 默认每轮30分钟
 const projectData = ref(null)
 const graphData = ref(null)

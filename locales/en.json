@@ -174,7 +174,8 @@
     "genderOther": "Other",
     "yearsOld": "years old",
     "initializing": "Initializing",
-    "generating": "Generating"
+    "generating": "Generating",
+    "modelPickerTitle": "Choose model"
   },
   "step3": {
     "startGenerateReport": "Generate Report",
@@ -572,7 +573,8 @@
     "getReportInfoFailed": "Failed to get report info: {error}",
     "enterStep": "Entering Step {step}: {name}",
     "returnToStep": "Returning to Step {step}: {name}",
-    "customSimRounds": "Custom simulation rounds: {rounds} rounds"
+    "customSimRounds": "Custom simulation rounds: {rounds} rounds",
+    "setSelectedModel": "Using model: {model}"
   },
   "report": {
     "taskStarted": "Report generation task started",
