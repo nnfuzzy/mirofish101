@@ -18,7 +18,10 @@ def tmp_sim_dir(tmp_path, monkeypatch):
 def flask_client(monkeypatch, tmp_path):
     """Flask test client with an isolated SimulationManager data dir."""
     from app.services.simulation_manager import SimulationManager
+    from app.services.simulation_runner import SimulationRunner
     monkeypatch.setattr(SimulationManager, "SIMULATION_DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(SimulationRunner, "RUN_STATE_DIR", str(tmp_path))
+    monkeypatch.setattr(SimulationRunner, "_run_states", {})
 
     from app import create_app  # existing factory
     app = create_app()

@@ -1320,6 +1320,56 @@ def download_simulation_config(simulation_id: str):
         }), 500
 
 
+@simulation_bp.route('/<simulation_id>', methods=['DELETE'])
+def delete_simulation(simulation_id: str):
+    """
+    硬删除模拟：移除模拟目录及内存缓存条目。
+
+    返回：
+        - 200: 成功删除
+        - 404: 模拟不存在
+        - 409: 模拟正在运行，拒绝删除（用户需先停止）
+
+    不级联删除：
+        - 关联的报告（reports/<simulation_id>）
+        - Zep 图谱中由该模拟写入的记忆条目
+    """
+    try:
+        manager = SimulationManager()
+        run_state = SimulationRunner.get_run_state(simulation_id)
+        if run_state and run_state.runner_status.value == "running":
+            return jsonify({
+                "success": False,
+                "error": t('api.simulationRunningCannotDelete', id=simulation_id),
+                "data": {
+                    "simulation_id": simulation_id,
+                    "runner_status": "running",
+                }
+            }), 409
+
+        deleted = manager.delete_simulation(simulation_id)
+        if not deleted:
+            return jsonify({
+                "success": False,
+                "error": t('api.simulationNotFound', id=simulation_id),
+                "data": {"simulation_id": simulation_id},
+            }), 404
+
+        return jsonify({
+            "success": True,
+            "message": t('api.simulationDeleted', id=simulation_id),
+            "data": {"simulation_id": simulation_id},
+        })
+
+    except Exception as e:
+        logger.error(f"删除模拟失败: {simulation_id}, error={e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "data": {"simulation_id": simulation_id},
+        }), 500
+
+
 @simulation_bp.route('/script/<script_name>/download', methods=['GET'])
 def download_simulation_script(script_name: str):
     """

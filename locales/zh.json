@@ -388,7 +388,10 @@
     "envRunning": "环境正在运行，可以接收Interview命令",
     "envNotRunningShort": "环境未运行或已关闭",
     "requireGraphIdAndQuery": "请提供 graph_id 和 query",
-    "initReportAgent": "初始化Report Agent..."
+    "initReportAgent": "初始化Report Agent...",
+    "simulationRunningCannotDelete": "模拟 {id} 正在运行，无法删除。请先停止。",
+    "simulationNotFound": "未找到模拟：{id}",
+    "simulationDeleted": "已删除模拟 {id}"
   },
   "progress": {
     "initGraphService": "初始化图谱构建服务...",
