@@ -938,15 +938,17 @@ def get_simulation_history():
             config = manager.get_simulation_config(sim.simulation_id)
             if config:
                 sim_dict["simulation_requirement"] = config.get("simulation_requirement", "")
+                sim_dict["selected_model"] = config.get("selected_model")
                 time_config = config.get("time_config", {})
                 sim_dict["total_simulation_hours"] = time_config.get("total_simulation_hours", 0)
                 # 推荐轮数（后备值）
                 recommended_rounds = int(
-                    time_config.get("total_simulation_hours", 0) * 60 / 
+                    time_config.get("total_simulation_hours", 0) * 60 /
                     max(time_config.get("minutes_per_round", 60), 1)
                 )
             else:
                 sim_dict["simulation_requirement"] = ""
+                sim_dict["selected_model"] = None
                 sim_dict["total_simulation_hours"] = 0
                 recommended_rounds = 0
             

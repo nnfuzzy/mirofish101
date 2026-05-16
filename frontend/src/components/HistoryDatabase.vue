@@ -98,6 +98,9 @@
           <span class="card-progress" :class="getProgressClass(project)">
             <span class="status-dot">●</span> {{ formatRounds(project) }}
           </span>
+          <span v-if="project.selected_model" class="sim-card-model-badge">
+            {{ shortenModelName(project.selected_model) }}
+          </span>
         </div>
         
         <!-- 底部装饰线 (hover时展开) -->
@@ -391,6 +394,14 @@ const formatRounds = (simulation) => {
   const total = simulation.total_rounds || 0
   if (total === 0) return t('history.notStarted')
   return t('history.roundsProgress', { current, total })
+}
+
+// 缩短模型名称（e.g. "gemini/gemini-3-flash-preview" → "flash-preview"）
+function shortenModelName(fullId) {
+  if (!fullId) return ''
+  const parts = fullId.split('/')
+  const name = parts[parts.length - 1]
+  return name.replace(/^gemini-\d+(\.\d+)?-/, '')
 }
 
 // 获取文件类型（用于样式）
@@ -1420,6 +1431,18 @@ onUnmounted(() => {
 .project-card:hover .sim-card-delete { opacity: 1; }
 .sim-card-delete:hover { color: #d32f2f; }
 .sim-card-delete:disabled { color: #ccc; cursor: not-allowed; }
+
+/* ===== 模型徽章 ===== */
+.sim-card-model-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #eef5ff;
+  color: #2196f3;
+  font-size: 11px;
+  font-family: monospace;
+  margin-left: 8px;
+}
 
 /* ===== 删除确认弹窗 ===== */
 .confirm-backdrop {
