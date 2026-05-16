@@ -316,7 +316,12 @@
     "notStarted": "未开始",
     "roundsProgress": "{current}/{total} 轮",
     "untitledSimulation": "未命名模拟",
-    "unknownFile": "未知文件"
+    "unknownFile": "未知文件",
+    "deleteSimulation": "删除模拟",
+    "deleteConfirmTitle": "删除模拟 {id}？",
+    "deleteConfirmBody": "将永久删除该模拟的所有文件（配置、人设、动作、轮次日志）。已生成的报告会保留。此操作不可撤销。",
+    "deleteConfirmButton": "删除",
+    "deleteConflictRunning": "该模拟仍在运行。请先停止运行。"
   },
   "api": {
     "projectNotFound": "项目不存在: {id}",

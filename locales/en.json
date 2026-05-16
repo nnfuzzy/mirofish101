@@ -316,7 +316,12 @@
     "notStarted": "Not started",
     "roundsProgress": "{current}/{total} rounds",
     "untitledSimulation": "Untitled simulation",
-    "unknownFile": "Unknown file"
+    "unknownFile": "Unknown file",
+    "deleteSimulation": "Delete simulation",
+    "deleteConfirmTitle": "Delete simulation {id}?",
+    "deleteConfirmBody": "This permanently removes the simulation's files (config, profiles, actions, round logs). Generated reports are kept. This cannot be undone.",
+    "deleteConfirmButton": "Delete",
+    "deleteConflictRunning": "This simulation is still running. Stop it first."
   },
   "api": {
     "projectNotFound": "Project not found: {id}",

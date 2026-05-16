@@ -33,20 +33,26 @@
         <div class="card-header">
           <span class="card-id">{{ formatSimulationId(project.simulation_id) }}</span>
           <div class="card-status-icons">
-            <span 
-              class="status-icon" 
+            <span
+              class="status-icon"
               :class="{ available: project.project_id, unavailable: !project.project_id }"
               :title="$t('history.graphBuild')"
             >◇</span>
-            <span 
-              class="status-icon available" 
+            <span
+              class="status-icon available"
               :title="$t('history.envSetup')"
             >◈</span>
-            <span 
-              class="status-icon" 
+            <span
+              class="status-icon"
               :class="{ available: project.report_id, unavailable: !project.report_id }"
               :title="$t('history.analysisReport')"
             >◆</span>
+            <button
+              type="button"
+              class="sim-card-delete"
+              :title="$t('history.deleteSimulation')"
+              @click.stop="askDelete(project)"
+            >×</button>
           </div>
         </div>
 
@@ -188,13 +194,31 @@
       </Transition>
     </Teleport>
   </div>
+
+  <!-- 删除确认弹窗 -->
+  <div v-if="deleteTarget" class="confirm-backdrop" @click.self="deleteTarget = null">
+    <div class="confirm-modal">
+      <h3>{{ $t('history.deleteConfirmTitle', { id: deleteTarget.simulation_id }) }}</h3>
+      <p v-if="deleteConflict">{{ $t('history.deleteConflictRunning') }}</p>
+      <p v-else>{{ $t('history.deleteConfirmBody') }}</p>
+      <div class="confirm-actions">
+        <button type="button" @click="deleteTarget = null">{{ $t('common.cancel') }}</button>
+        <button
+          type="button"
+          class="confirm-delete-btn"
+          :disabled="deleteConflict || deleting"
+          @click="confirmDelete"
+        >{{ deleting ? $t('common.loading') : $t('history.deleteConfirmButton') }}</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, onActivated, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { getSimulationHistory } from '../api/simulation'
+import { getSimulationHistory, deleteSimulation } from '../api/simulation'
 
 const router = useRouter()
 const route = useRoute()
@@ -207,6 +231,12 @@ const isExpanded = ref(false)
 const hoveringCard = ref(null)
 const historyContainer = ref(null)
 const selectedProject = ref(null)  // 当前选中的项目（用于弹窗）
+
+// 删除确认弹窗状态
+const deleteTarget = ref(null)
+const deleteConflict = ref(false)
+const deleting = ref(false)
+
 let observer = null
 let isAnimating = false  // 动画锁，防止闪烁
 let expandDebounceTimer = null  // 防抖定时器
@@ -433,6 +463,35 @@ const goToReport = () => {
       params: { reportId: selectedProject.value.report_id }
     })
     closeModal()
+  }
+}
+
+// 打开删除确认弹窗
+function askDelete(sim) {
+  deleteTarget.value = sim
+  deleteConflict.value = false
+}
+
+// 确认删除
+async function confirmDelete() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  try {
+    const result = await deleteSimulation(deleteTarget.value.simulation_id)
+    if (result.success) {
+      // 从本地列表中移除
+      projects.value = projects.value.filter(
+        s => s.simulation_id !== deleteTarget.value.simulation_id
+      )
+      deleteTarget.value = null
+    } else if (result.data && result.data.runner_status) {
+      // 409 冲突 — 模拟仍在运行
+      deleteConflict.value = true
+    } else {
+      console.error('删除失败:', result.error)
+    }
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -1339,4 +1398,37 @@ onUnmounted(() => {
   text-align: center;
   line-height: 1.5;
 }
+
+/* ===== 删除按钮 ===== */
+.sim-card-delete {
+  background: transparent;
+  border: none;
+  color: #999;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease;
+  padding: 0 6px;
+}
+.project-card:hover .sim-card-delete { opacity: 1; }
+.sim-card-delete:hover { color: #d32f2f; }
+.sim-card-delete:disabled { color: #ccc; cursor: not-allowed; }
+
+/* ===== 删除确认弹窗 ===== */
+.confirm-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.confirm-modal {
+  background: #fff; padding: 24px; border-radius: 8px; max-width: 480px; width: 90%;
+  font-family: inherit;
+}
+.confirm-modal h3 { margin: 0 0 12px; font-size: 16px; }
+.confirm-modal p { margin: 0 0 16px; color: #555; }
+.confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.confirm-actions button {
+  padding: 8px 16px; border: 1px solid #ccc; background: #fff; cursor: pointer; border-radius: 4px;
+}
+.confirm-actions .confirm-delete-btn { background: #d32f2f; color: #fff; border-color: #d32f2f; }
+.confirm-actions .confirm-delete-btn:disabled { background: #f0a0a0; border-color: #f0a0a0; cursor: not-allowed; }
 </style>
