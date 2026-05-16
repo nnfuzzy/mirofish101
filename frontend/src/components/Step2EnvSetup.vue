@@ -509,7 +509,7 @@
             </Transition>
           </div>
 
-          <!-- 模型选择器 -->
+          <!-- Model picker -->
           <div v-if="availableModels.length" class="model-picker-section">
             <div class="config-block-title">{{ $t('step2.modelPickerTitle') }}</div>
             <div class="model-cards">
@@ -699,9 +699,9 @@ let lastLoggedConfigStage = ''
 const useCustomRounds = ref(false) // 默认使用自动配置轮数
 const customMaxRounds = ref(40)   // 默认推荐40轮
 
-// 模型选择
+// Model picker
 const availableModels = ref([])
-const selectedModel = ref(null)  // null = 使用服务端默认
+const selectedModel = ref(null)  // null = use server default
 
 // Watch stage to update phase
 watch(currentStage, (newStage) => {
@@ -1101,7 +1101,7 @@ watch(() => props.systemLogs?.length, () => {
 })
 
 onMounted(async () => {
-  // 加载可用模型列表
+  // Load the available model list
   try {
     const data = await listModels()
     availableModels.value = data.models
@@ -2644,7 +2644,7 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* 模型选择器 */
+/* Model picker */
 .model-picker-section { margin: 16px 0; }
 .model-cards { display: flex; gap: 12px; flex-wrap: wrap; }
 .model-card {

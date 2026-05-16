@@ -211,7 +211,7 @@ class SimulationManager:
             return False
 
         shutil.rmtree(sim_dir)
-        logger.info(f"已删除模拟: {simulation_id}")
+        logger.info(f"Simulation deleted: {simulation_id}")
         return True
 
     def create_simulation(

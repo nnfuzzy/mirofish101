@@ -9,8 +9,17 @@ def _seed_sim(tmp_path, sim_id, runner_status=None):
     with open(os.path.join(sim_dir, "state.json"), "w", encoding="utf-8") as f:
         json.dump({"simulation_id": sim_id, "status": "created"}, f)
     if runner_status:
+        # Use the test process's own pid so the runner's self-heal check
+        # (os.kill(pid, 0)) sees a live process and doesn't downgrade the
+        # state to "failed". Without this, the new self-heal logic from
+        # 9d47713 marks orphaned in-flight runs as failed and DELETE no
+        # longer returns 409 for them.
         with open(os.path.join(sim_dir, "run_state.json"), "w", encoding="utf-8") as f:
-            json.dump({"simulation_id": sim_id, "runner_status": runner_status}, f)
+            json.dump({
+                "simulation_id": sim_id,
+                "runner_status": runner_status,
+                "process_pid": os.getpid(),
+            }, f)
     return sim_dir
 
 

@@ -198,7 +198,7 @@
     </Teleport>
   </div>
 
-  <!-- 删除确认弹窗 -->
+  <!-- Confirm-delete modal -->
   <Teleport to="body">
     <div v-if="deleteTarget" class="confirm-backdrop" @click.self="deleteTarget = null">
       <div class="confirm-modal">
@@ -238,7 +238,7 @@ const hoveringCard = ref(null)
 const historyContainer = ref(null)
 const selectedProject = ref(null)  // 当前选中的项目（用于弹窗）
 
-// 删除确认弹窗状态
+// Confirm-delete modal state
 const deleteTarget = ref(null)
 const deleteConflict = ref(false)
 const deleting = ref(false)
@@ -396,7 +396,7 @@ const formatRounds = (simulation) => {
   return t('history.roundsProgress', { current, total })
 }
 
-// 缩短模型名称（e.g. "gemini/gemini-3-flash-preview" → "flash-preview"）
+// Shorten model name (e.g. "gemini/gemini-3-flash-preview" → "flash-preview")
 function shortenModelName(fullId) {
   if (!fullId) return ''
   const parts = fullId.split('/')
@@ -481,14 +481,14 @@ const goToReport = () => {
   }
 }
 
-// 打开删除确认弹窗
+// Open the confirm-delete modal
 function askDelete(sim) {
   deleteTarget.value = sim
   deleteConflict.value = false
   deleteError.value = ''
 }
 
-// 确认删除
+// Confirm delete
 async function confirmDelete() {
   const target = deleteTarget.value
   if (!target) return
@@ -496,13 +496,13 @@ async function confirmDelete() {
   try {
     const result = await deleteSimulation(target.simulation_id)
     if (result.success) {
-      // 从本地列表中移除
+      // Remove from local list
       projects.value = projects.value.filter(
         s => s.simulation_id !== target.simulation_id
       )
       deleteTarget.value = null
     } else if (result.data && result.data.runner_status) {
-      // 409 冲突 — 模拟仍在运行
+      // 409 conflict — simulation is still running
       deleteConflict.value = true
     } else {
       // Surface the error inline rather than swallowing to console.
@@ -1417,7 +1417,7 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-/* ===== 删除按钮 ===== */
+/* ===== Delete button ===== */
 .sim-card-delete {
   background: transparent;
   border: none;
@@ -1432,7 +1432,7 @@ onUnmounted(() => {
 .sim-card-delete:hover { color: #d32f2f; }
 .sim-card-delete:disabled { color: #ccc; cursor: not-allowed; }
 
-/* ===== 模型徽章 ===== */
+/* ===== Model badge ===== */
 .sim-card-model-badge {
   display: inline-block;
   padding: 2px 6px;
@@ -1444,7 +1444,7 @@ onUnmounted(() => {
   margin-left: 8px;
 }
 
-/* ===== 删除确认弹窗 ===== */
+/* ===== Confirm-delete modal ===== */
 .confirm-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,.4);
   display: flex; align-items: center; justify-content: center; z-index: 1000;

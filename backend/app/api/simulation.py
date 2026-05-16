@@ -43,7 +43,7 @@ def optimize_interview_prompt(prompt: str) -> str:
     return f"{INTERVIEW_PROMPT_PREFIX}{prompt}"
 
 
-# ============== 模型配置接口 ==============
+# ============== Model picker endpoints ==============
 
 @simulation_bp.route('/models', methods=['GET'])
 def list_models():
@@ -1341,16 +1341,16 @@ def download_simulation_config(simulation_id: str):
 @simulation_bp.route('/<simulation_id>', methods=['DELETE'])
 def delete_simulation(simulation_id: str):
     """
-    硬删除模拟：移除模拟目录及内存缓存条目。
+    Hard-delete a simulation: remove its directory and evict the in-memory cache.
 
-    返回：
-        - 200: 成功删除
-        - 404: 模拟不存在
-        - 409: 模拟正在运行，拒绝删除（用户需先停止）
+    Returns:
+        - 200: deleted successfully
+        - 404: simulation not found
+        - 409: simulation is still running (caller must stop it first)
 
-    不级联删除：
-        - 关联的报告（reports/<simulation_id>）
-        - Zep 图谱中由该模拟写入的记忆条目
+    Does NOT cascade:
+        - related reports (reports/<simulation_id>)
+        - Zep graph memory entries written by this simulation
     """
     try:
         manager = SimulationManager()
@@ -1381,7 +1381,7 @@ def delete_simulation(simulation_id: str):
         })
 
     except Exception as e:
-        logger.error(f"删除模拟失败: {simulation_id}, error={e}")
+        logger.error(f"Simulation delete failed: {simulation_id}, error={e}")
         return jsonify({
             "success": False,
             "error": str(e),
