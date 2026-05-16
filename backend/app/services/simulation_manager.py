@@ -190,7 +190,30 @@ class SimulationManager:
         
         self._simulations[simulation_id] = state
         return state
-    
+
+    def delete_simulation(self, simulation_id: str) -> bool:
+        """Hard-delete a simulation: remove its directory and evict cache.
+
+        Does NOT check runner_status — callers must do that first (see
+        api/simulation.py delete handler for the 409 contract).
+
+        Returns True if a directory was deleted, False if nothing existed
+        on disk. Always evicts the in-memory cache, even on False, so
+        stale entries can't survive a failed delete.
+        """
+        import shutil
+
+        # Always evict cache, even if dir is already gone.
+        self._simulations.pop(simulation_id, None)
+
+        sim_dir = os.path.join(self.SIMULATION_DATA_DIR, simulation_id)
+        if not os.path.isdir(sim_dir):
+            return False
+
+        shutil.rmtree(sim_dir)
+        logger.info(f"已删除模拟: {simulation_id}")
+        return True
+
     def create_simulation(
         self,
         project_id: str,
