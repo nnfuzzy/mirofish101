@@ -1,3 +1,4 @@
+import axios from 'axios'
 import service, { requestWithRetry } from './index'
 
 /**
@@ -187,18 +188,22 @@ export const getSimulationHistory = (limit = 20) => {
 
 /**
  * Hard-delete a simulation.
+ * Uses raw axios (bypassing the shared interceptor) so that 409 conflict responses
+ * preserve resp.data.data.runner_status for the caller to inspect.
  * @param {string} simulationId
  * @returns {Promise<{success: boolean, data?: object, error?: string}>}
  */
 export const deleteSimulation = async (simulationId) => {
   try {
-    // Interceptor unwraps response.data and resolves with it on success: true
-    return await service.delete(`/api/simulation/${simulationId}`, { validateStatus: () => true })
+    // Bypass the shared `service` interceptor which discards `data` on success: false.
+    // `validateStatus: () => true` prevents axios from throwing on 4xx/5xx so the
+    // full response body (including data.runner_status on 409) always reaches the caller.
+    const resp = await axios.delete(`/api/simulation/${simulationId}`, {
+      validateStatus: () => true
+    })
+    return resp.data
   } catch (err) {
-    // Interceptor rejects with new Error(res.error) on success: false.
-    // Re-wrap into the standard body envelope so the caller can inspect .success / .data.
-    if (err && typeof err === 'object' && 'success' in err) return err
-    if (err && err.response && err.response.data) return err.response.data
+    // Only reaches here on network-level failures (no response at all).
     return { success: false, error: String(err && err.message ? err.message : err) }
   }
 }
