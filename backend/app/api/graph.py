@@ -248,6 +248,7 @@ def generate_ontology():
         })
         
     except Exception as e:
+        logger.exception(f"Ontology generation failed: {e}")
         return jsonify({
             "success": False,
             "error": str(e),
@@ -520,8 +521,9 @@ def build_graph():
                 "message": t('api.graphBuildStarted', taskId=task_id)
             }
         })
-        
+
     except Exception as e:
+        logger.exception(f"Graph build kickoff failed: {e}")
         return jsonify({
             "success": False,
             "error": str(e),
@@ -585,8 +587,9 @@ def get_graph_data(graph_id: str):
             "success": True,
             "data": graph_data
         })
-        
+
     except Exception as e:
+        logger.exception(f"Graph data fetch failed for graph_id={graph_id}: {e}")
         return jsonify({
             "success": False,
             "error": str(e),
@@ -613,8 +616,9 @@ def delete_graph(graph_id: str):
             "success": True,
             "message": t('api.graphDeleted', id=graph_id)
         })
-        
+
     except Exception as e:
+        logger.exception(f"Graph delete failed for graph_id={graph_id}: {e}")
         return jsonify({
             "success": False,
             "error": str(e),
