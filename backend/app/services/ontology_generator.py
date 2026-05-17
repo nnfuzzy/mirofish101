@@ -213,11 +213,15 @@ class OntologyGenerator:
             {"role": "user", "content": user_message}
         ]
         
-        # 调用LLM
+        # Call the LLM. Ontology JSON for rich documents (many entity types
+        # × many attributes × multiple examples each) frequently exceeds 4k
+        # tokens; the model then truncates mid-string and json.loads chokes
+        # with "Unterminated string". 16k gives ~4× headroom and stays well
+        # under Gemini's 65k output cap.
         result = self.llm_client.chat_json(
             messages=messages,
             temperature=0.3,
-            max_tokens=4096
+            max_tokens=16384
         )
         
         # 验证和后处理

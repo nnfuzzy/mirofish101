@@ -121,7 +121,23 @@ class LLMClient:
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError as exc:
-            raise ValueError(f"LLM returned invalid JSON: {cleaned}") from exc
+            # Heuristic: a well-formed JSON object/array ends with } or ]
+            # after fence-stripping. If it doesn't, the model almost
+            # certainly hit max_tokens and was truncated mid-string —
+            # surface that explicitly instead of dumping a 5KB blob into
+            # the error log.
+            tail = cleaned[-1] if cleaned else ""
+            if tail not in ("}", "]"):
+                raise ValueError(
+                    f"LLM JSON appears truncated (last char={tail!r}, "
+                    f"length={len(cleaned)} chars). Likely hit max_tokens — "
+                    f"increase the limit on this call. "
+                    f"First 300 chars: {cleaned[:300]}..."
+                ) from exc
+            raise ValueError(
+                f"LLM returned invalid JSON (length={len(cleaned)}). "
+                f"First 500 chars: {cleaned[:500]}"
+            ) from exc
 
 
 class ReportLLMClient(LLMClient):
