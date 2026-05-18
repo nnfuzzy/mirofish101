@@ -21,6 +21,7 @@ from zep_cloud.client import Zep
 from ..config import Config
 from ..utils.logger import get_logger
 from ..utils.locale import get_language_instruction, get_locale, set_locale, t
+from ..utils.llm_client import LiteLLMOpenAIShim, resolve_litellm_model
 from .zep_entity_reader import EntityNode, ZepEntityReader
 
 logger = get_logger('mirofish.oasis_profile')
@@ -186,17 +187,33 @@ class OasisProfileGenerator:
         zep_api_key: Optional[str] = None,
         graph_id: Optional[str] = None
     ):
-        self.api_key = api_key or Config.LLM_API_KEY
-        self.base_url = base_url or Config.LLM_BASE_URL
-        self.model_name = model_name or Config.LLM_MODEL_NAME
-        
-        if not self.api_key:
-            raise ValueError("LLM_API_KEY 未配置")
-        
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url
-        )
+        # Resolve model: provider-prefixed arg > LITELLM_MODEL env > legacy.
+        resolved_model = resolve_litellm_model(model_name)
+        if not resolved_model:
+            raise ValueError(
+                "No LLM model configured. Set LITELLM_MODEL "
+                "(e.g. 'gemini/gemini-2.5-flash') with the matching provider key, "
+                "or LLM_MODEL_NAME + LLM_API_KEY for the legacy OpenAI-compatible path."
+            )
+        self.model_name = resolved_model
+
+        # If LITELLM_MODEL is in play, route through LiteLLM and let it read
+        # provider keys (GEMINI_API_KEY, ANTHROPIC_API_KEY, …) from env.
+        # Otherwise fall back to the legacy OpenAI-compatible client.
+        use_litellm = bool(Config.LITELLM_MODEL) or (model_name and "/" in model_name)
+        if use_litellm:
+            self.api_key = api_key  # may be None — LiteLLM reads from env
+            self.base_url = base_url  # may be None
+            self.client = LiteLLMOpenAIShim(api_key=self.api_key, api_base=self.base_url)
+        else:
+            self.api_key = api_key or Config.LLM_API_KEY
+            self.base_url = base_url or Config.LLM_BASE_URL
+            if not self.api_key:
+                raise ValueError("LLM_API_KEY 未配置")
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url=self.base_url,
+            )
         
         # Zep客户端用于检索丰富上下文
         self.zep_api_key = zep_api_key or Config.ZEP_API_KEY

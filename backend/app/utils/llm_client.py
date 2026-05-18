@@ -29,6 +29,59 @@ import litellm
 from ..config import Config
 
 
+class LiteLLMOpenAIShim:
+    """OpenAI-shaped facade over litellm.completion.
+
+    Lets call sites that were written against the OpenAI SDK
+    (`self.client.chat.completions.create(model=..., messages=..., ...)`)
+    route through LiteLLM without code changes — LiteLLM returns
+    OpenAI-compatible response objects, so `.choices[0].message.content`
+    and `.finish_reason` continue to work.
+
+    Used by oasis_profile_generator and simulation_config_generator, which
+    keep intricate retry/JSON-repair logic around `.create(...)` calls
+    that we don't want to disturb.
+    """
+
+    class _Completions:
+        def __init__(self, api_key: Optional[str], api_base: Optional[str]):
+            self._api_key = api_key
+            self._api_base = api_base
+
+        def create(self, **kwargs):
+            if self._api_key and "api_key" not in kwargs:
+                kwargs["api_key"] = self._api_key
+            if self._api_base and "api_base" not in kwargs:
+                kwargs["api_base"] = self._api_base
+            return litellm.completion(**kwargs)
+
+    class _Chat:
+        def __init__(self, api_key: Optional[str], api_base: Optional[str]):
+            self.completions = LiteLLMOpenAIShim._Completions(api_key, api_base)
+
+    def __init__(self, api_key: Optional[str] = None, api_base: Optional[str] = None):
+        self.chat = LiteLLMOpenAIShim._Chat(api_key, api_base)
+
+
+def resolve_litellm_model(explicit: Optional[str]) -> Optional[str]:
+    """Pick the model string to hand to LiteLLM.
+
+    Priority: provider-prefixed explicit arg > LITELLM_MODEL env >
+    legacy LLM_MODEL_NAME wrapped as `openai/<name>` > a bare explicit
+    arg (assumed to be an OpenAI-style id). Returns None if nothing is
+    configured — callers decide whether to raise.
+    """
+    if explicit and "/" in explicit:
+        return explicit
+    if Config.LITELLM_MODEL:
+        return Config.LITELLM_MODEL
+    if explicit:
+        return f"openai/{explicit}"
+    if Config.LLM_MODEL_NAME:
+        return f"openai/{Config.LLM_MODEL_NAME}"
+    return None
+
+
 class LLMClient:
     """LLM client backed by LiteLLM.
 
