@@ -1,7 +1,4 @@
-"""
-配置管理
-统一从项目根目录的 .env 文件加载配置
-"""
+"""\n配置管理\n统一从项目根目录的 .env 文件加载配置\n"""
 
 import os
 from dotenv import load_dotenv
@@ -22,9 +19,9 @@ class Config:
     
     # Flask配置
     SECRET_KEY = os.environ.get('SECRET_KEY', 'mirofish-secret-key')
-    DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
-    # JSON配置 - 禁用ASCII转义，让中文直接显示（而不是 \uXXXX 格式）
+    # JSON配置 - 禁用ASCII转义，让中文直接显示
     JSON_AS_ASCII = False
     
     # ── LLM configuration ────────────────────────────────────────────
@@ -84,9 +81,9 @@ class Config:
     REPORT_AGENT_TEMPERATURE = float(os.environ.get('REPORT_AGENT_TEMPERATURE', '0.5'))
     
     @classmethod
-    def validate(cls):
+    def validate(cls) -> list[str]:
         """验证必要配置 / Validate required configuration."""
-        errors = []
+        errors: list[str] = []
         # Either the LiteLLM path (preferred) or the legacy OpenAI-style
         # path must be configured. LiteLLM provider keys themselves are
         # checked at call time by litellm based on the model prefix.
@@ -98,5 +95,9 @@ class Config:
             )
         if not cls.ZEP_API_KEY:
             errors.append("ZEP_API_KEY 未配置")
+        if os.environ.get("ZEP_API_URL"):
+            errors.append("ZEP_API_URL 不受支持；MiroFish 仅连接 Zep Cloud")
+        if cls.DEBUG:
+            import warnings
+            warnings.warn("Flask DEBUG mode is enabled. Do not use in production.", RuntimeWarning)
         return errors
-
